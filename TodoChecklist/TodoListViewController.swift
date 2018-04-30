@@ -9,21 +9,24 @@
 import UIKit
 
 class TodoListViewController: UITableViewController {
-    var items: [String] = []
-    let defaults = UserDefaults.standard
+    var items: [Item] = [Item]()
+    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("items.plist")
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        if let todos = defaults.array(forKey: "TodoList") as? [String] {
-            items = todos
-        }
     }
 
     //MARK TableView Data source
 
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "TodoItemCell", for: indexPath)
-        cell.textLabel?.text = items[indexPath.row]
+        cell.textLabel?.text = items[indexPath.row].name
+
+        if items[indexPath.row].done {
+            cell.accessoryType = .checkmark
+        } else {
+            cell.accessoryType = .none
+        }
         return cell
     }
 
@@ -36,10 +39,14 @@ class TodoListViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
 
-        if tableView.cellForRow(at: indexPath)?.accessoryType == .checkmark {
-            tableView.cellForRow(at: indexPath)?.accessoryType = .none
-        } else {
+        items[indexPath.row].done = !items[indexPath.row].done
+
+        let selectedItem = items[indexPath.row]
+
+        if selectedItem.done {
             tableView.cellForRow(at: indexPath)?.accessoryType = .checkmark
+        } else {
+            tableView.cellForRow(at: indexPath)?.accessoryType = .none
         }
 
     }
@@ -51,8 +58,16 @@ class TodoListViewController: UITableViewController {
         var textField: UITextField = UITextField()
 
         let action = UIAlertAction(title: "Add item", style: .default) { (action) in
-            self.items.append(textField.text!)
-            self.defaults.set(self.items, forKey: "TodoList")
+            let newItem = Item(nameData: textField.text!, doneStatus: false)
+            self.items.append(newItem)
+            let encoder = PropertyListEncoder()
+            do {
+                let data = try encoder.encode(self.items)
+                try data.write(to: self.dataFilePath!)
+            } catch {
+                print("Error encoding file")
+            }
+
 
             self.tableView.reloadData()
         }
