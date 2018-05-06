@@ -14,6 +14,7 @@ class TodoListViewController: UITableViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        loadItems()
     }
 
     //MARK TableView Data source
@@ -79,6 +80,18 @@ class TodoListViewController: UITableViewController {
 
         alert.addAction(action)
         present(alert, animated: true, completion: nil)
+    }
+
+    func loadItems() {
+        if let data = try? Data(contentsOf: dataFilePath!) {
+            let decoder = PropertyListDecoder()
+
+            do {
+                items = try decoder.decode([Item].self, from: data)
+            } catch {
+                print("Error to decode items data")
+            }
+        }
     }
 
 }
